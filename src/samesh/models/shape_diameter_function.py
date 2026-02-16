@@ -164,7 +164,7 @@ def colormap_shape_diameter_function(mesh: Trimesh, sdf_values: NumpyTensor['f']
     """
     assert len(mesh.faces) == len(sdf_values)
     mesh = duplicate_verts(mesh) # needed to prevent face color interpolation
-    mesh.visual.face_colors = trimesh.visual.interpolate(sdf_values, color_map='jet')
+    mesh.visual.face_colors = trimesh.visual.interpolate(sdf_values, color_map='viridis')
     return mesh
 
 
