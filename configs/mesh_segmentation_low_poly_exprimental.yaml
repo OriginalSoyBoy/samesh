@@ -1,0 +1,39 @@
+---
+cache: /mnt/c/Users/Jasmin/Documents/GitHub/samesh/outputs/mesh_segmentation_cache
+cache_overwrite: False
+output: /mnt/c/Users/Jasmin/Documents/GitHub/samesh/outputs/mesh_segmentation_output
+
+sam:
+  sam:
+    checkpoint: /mnt/c/Users/Jasmin/Documents/GitHub/samesh/checkpoints/sam2_hiera_large.pt
+    model_config: sam2_hiera_l.yaml
+    auto: True
+    ground: False
+    engine_config:
+      points_per_side: 48
+      crop_n_layers: 0
+      #min_mask_region_area: 1024 # sam2 breaks since it uses C connected components
+      pred_iou_thresh: 0.4
+      stability_score_thresh: 0.6
+      stability_score_offset: 1.0
+
+sam_mesh:
+  use_modes: ['matte', 'norms']
+  min_area: 128
+  connections_bin_resolution: 100
+  connections_threshold: 0
+  connections_bin_threshold_percentage: 0.2
+  smoothing_threshold_percentage_size: 0.01
+  smoothing_threshold_percentage_area: 0.01
+  smoothing_iterations: 32
+  repartition_cost: 1
+  repartition_lambda: 3
+  repartition_iterations: 1
+
+renderer:
+  target_dim: [1024, 1024]
+  camera_generation_method: icosahedron #octohedron
+  renderer_args:
+    interpolate_norms: True
+  sampling_args: {radius: 2}
+  lighting_args: {}

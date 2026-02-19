@@ -606,7 +606,8 @@ class SamModelMesh(nn.Module):
         return components
 
 
-def segment_mesh(filename: Path | str, config: OmegaConf, visualize=False, extension='glb', target_labels=None, texture=False) -> Trimesh:
+def segment_mesh(filename: Path | str, config: OmegaConf, visualize=False, extension='glb', target_labels=None, texture=False, export_separated: bool = True,
+    export_parts_as_files: bool = False,) -> Trimesh:
     """
     """
     print('Segmenting mesh with SAMesh: ', filename)
@@ -629,6 +630,44 @@ def segment_mesh(filename: Path | str, config: OmegaConf, visualize=False, exten
     tmesh_colored = colormap_faces_mesh(tmesh, faces2label)
     tmesh_colored.export       (f'{config.output}/{filename.stem}_segmented.{extension}')
     json.dump(faces2label, open(f'{config.output}/{filename.stem}_face2label.json', 'w'))
+
+    extension_stl = 'obj'
+
+    if export_separated:
+        # faces2label is a dict: {face_index: label}. Convert to a dense per-face label array.
+        n_faces = len(tmesh.faces)
+        faces2label_arr = np.full(n_faces, -1, dtype=np.int64)
+
+        for face_idx, lab in faces2label.items():
+            i = int(face_idx)
+            if 0 <= i < n_faces:
+                faces2label_arr[i] = int(lab)
+
+        valid = faces2label_arr >= 0
+        labels = np.unique(faces2label_arr[valid]).tolist()
+
+        # Build a Scene with one Geometry per part (imports as separate objects in most DCC tools)
+        scene = trimesh.Scene()
+        for lab in labels:
+            face_idx = np.nonzero(faces2label_arr == lab)[0]
+            if face_idx.size == 0:
+                continue
+
+            # submesh returns a list; append=True merges into one Trimesh
+            part = tmesh.submesh([face_idx], append=True, repair=False)
+            part.metadata = dict(part.metadata or {})
+            part.metadata["label"] = int(lab)
+
+            name = f"part_{int(lab):03d}"
+            scene.add_geometry(part, geom_name=name, node_name=name)
+
+            if export_parts_as_files:
+                parts_dir = Path(config.output) / "parts"
+                parts_dir.mkdir(parents=True, exist_ok=True)
+                part.export(str(parts_dir / f"{name}.{extension_stl}"))
+
+        scene.export(str(Path(config.output) / f"{filename.stem}_parts.{extension_stl}"))
+
     return tmesh_colored
 
 
