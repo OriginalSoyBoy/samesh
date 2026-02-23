@@ -18,7 +18,7 @@ sam:
       stability_score_offset: 1.0
 
 sam_mesh:
-  use_modes: ['matte', 'norms']
+  use_modes: ['sdf']
   min_area: 128
   connections_bin_resolution: 100
   connections_threshold: 0
